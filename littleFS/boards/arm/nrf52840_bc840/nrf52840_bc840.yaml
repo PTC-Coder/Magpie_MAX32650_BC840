@@ -1,0 +1,22 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: nrf52840_bc840
+name: NRF52840_BC840
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 256
+flash: 1024
+supported:
+  - gpio
+  - i2c
+  - pwm
+  - spi
+  - usb_device
+  - ble
+  - ieee802154
+  - qspi

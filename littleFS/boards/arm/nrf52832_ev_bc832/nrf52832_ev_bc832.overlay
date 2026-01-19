@@ -31,3 +31,40 @@
 
     cs-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
 };
+
+/*
+ * I2C Configuration for DS3231 RTC
+ * Adjust pin numbers according to your hardware connection
+ */
+
+&pinctrl {
+	i2c0_default: i2c0_default {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 0, 26)>,
+				<NRF_PSEL(TWIM_SCL, 0, 27)>;
+		};
+	};
+
+	i2c0_sleep: i2c0_sleep {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 0, 26)>,
+				<NRF_PSEL(TWIM_SCL, 0, 27)>;
+			low-power-enable;
+		};
+	};
+};
+
+&i2c0 {
+	compatible = "nordic,nrf-twi";
+	status = "okay";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
+	clock-frequency = <I2C_BITRATE_FAST>;  /* 400kHz */
+
+	ds3231: ds3231@68 {
+		compatible = "maxim,ds3231";
+		reg = <0x68>;
+		label = "DS3231";
+	};
+};
