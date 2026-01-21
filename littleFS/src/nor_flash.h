@@ -89,6 +89,9 @@ int nor_flash_read_struct(flash_device_t device, const char *filename, void *buf
 const char* nor_flash_get_device_name(flash_device_t device);
 uint32_t nor_flash_get_device_size(flash_device_t device);
 
+/* Get file size (returns size in bytes, or negative error code) */
+int nor_flash_get_file_size(flash_device_t device, const char *filename);
+
 #ifdef __cplusplus
 }
 #endif

@@ -29,11 +29,20 @@ static const struct gpio_dt_spec led_blue = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
 static const struct gpio_dt_spec led_red = GPIO_DT_SPEC_GET(LED1_NODE, gpios);
 // static const struct gpio_dt_spec sw0 = GPIO_DT_SPEC_GET(DT_ALIAS(sw0), gpios);
 
+/* LED pin definitions (from devicetree) */
+#define LED_BLUE_PIN  7   /* P1.7 */
+#define LED_RED_PIN   4   /* P1.4 */
+
 /**
  * @brief Disconnect all GPIO pins to High-Z state
  * 
  * Sets all GPIO pins to input with no pull resistors (high impedance).
  * This prevents the nRF from interfering with shared bus lines when sleeping.
+ * Exceptions:
+ *   - P1.13: Output LOW
+ *   - P1.14: Input
+ *   - P1.4 (Red LED): Preserved
+ *   - P1.7 (Blue LED): Preserved
  */
 static void disconnect_all_gpios(void)
 {
@@ -43,8 +52,19 @@ static void disconnect_all_gpios(void)
 	}
 	/* Port 1: pins 0-15 (nRF52840 has 48 GPIOs total) */
 	for (uint32_t pin = 0; pin < 16; pin++) {
+		/* Skip P1.13, P1.14, and LED pins */
+		if (pin == 13 || pin == 14 || pin == LED_BLUE_PIN || pin == LED_RED_PIN) {
+			continue;
+		}
 		nrf_gpio_cfg_default(NRF_GPIO_PIN_MAP(1, pin));
 	}
+
+	/* P1.13: Output, default LOW */
+	nrf_gpio_cfg_output(NRF_GPIO_PIN_MAP(1, 13));
+	nrf_gpio_pin_clear(NRF_GPIO_PIN_MAP(1, 13));
+
+	/* P1.14: Input (no pull) */
+	nrf_gpio_cfg_input(NRF_GPIO_PIN_MAP(1, 14), NRF_GPIO_PIN_NOPULL);
 }
 
 int main(void)
@@ -142,7 +162,11 @@ int main(void)
 	 * This prevents interference with shared bus lines to other MCU */
 	disconnect_all_gpios();
 
-	sys_poweroff();
+	/* Turn on Blue LED, turn off Red LED after disconnect */
+	gpio_pin_set_dt(&led_blue, 1);
+	gpio_pin_set_dt(&led_red, 0);
+
+	//sys_poweroff();
 
 	return 0;
 }
