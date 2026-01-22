@@ -19,6 +19,7 @@
 #include <time.h>
 #include <errno.h>
 #include "nor_flash.h"
+#include "ds3231.h"
 #include <SEGGER_RTT.h>
 
 /* SLEEP_TIME */
@@ -339,6 +340,33 @@ int main(void)
 	k_msleep(200);
 	gpio_pin_set_dt(&blu_led, 0);
 
+	// ******************** DS3231 RTC Initialization **************
+
+	LOG_INF_FLUSH("Initializing DS3231 RTC...");
+
+	struct ds3231_dev *rtc = ds3231_init("I2C_0");
+	if (!rtc) {
+		LOG_ERR("Failed to initialize DS3231 RTC");
+	} else {
+		/* Set time to 2026-01-22 10:00:00 AM Thursday */
+		struct tm set_time = {
+			.tm_year = 2026 - 1900,  /* Years since 1900 */
+			.tm_mon = 0,              /* January (0-11) */
+			.tm_mday = 22,            /* Day of month */
+			.tm_hour = 10,            /* 10:00 AM */
+			.tm_min = 0,
+			.tm_sec = 0,
+			.tm_wday = 4,             /* Thursday (0=Sunday) */
+		};
+
+		ret = ds3231_set_datetime(rtc, &set_time);
+		if (ret < 0) {
+			LOG_ERR("Failed to set DS3231 time: %d", ret);
+		} else {
+			LOG_INF_FLUSH("DS3231 time set to 2026-01-22 10:00:00 AM");
+		}
+	}
+
 	// ******************** Little FS test **************
 
 	char write_data[] = "Hello, Dual NOR Flash with LittleFS!";
@@ -479,6 +507,26 @@ int main(void)
 	}
 
 	// ******************** End of Little FS test **************
+
+	// ******************** DS3231 RTC Read Time **************
+
+	if (rtc) {
+		struct tm current_time;
+		ret = ds3231_get_datetime(rtc, &current_time);
+		if (ret < 0) {
+			LOG_ERR("Failed to read DS3231 time: %d", ret);
+		} else {
+			LOG_INF_FLUSH("DS3231 Current Time: %04d-%02d-%02d %02d:%02d:%02d",
+				current_time.tm_year + 1900,
+				current_time.tm_mon + 1,
+				current_time.tm_mday,
+				current_time.tm_hour,
+				current_time.tm_min,
+				current_time.tm_sec);
+		}
+	}
+
+	// ******************** End of DS3231 RTC Read **************
 
 	LOG_INF_FLUSH("All tests completed successfully!");
 	LOG_INF_FLUSH("System running - P1.13 LOW will trigger deep sleep");

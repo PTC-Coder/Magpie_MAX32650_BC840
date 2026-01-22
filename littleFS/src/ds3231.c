@@ -46,15 +46,18 @@ struct ds3231_dev *ds3231_init(const char *i2c_label)
     uint8_t ctrl_reg;
     int ret;
 
+    (void)i2c_label;  /* Unused - kept for API compatibility */
+
     dev = k_malloc(sizeof(struct ds3231_dev));
     if (!dev) {
         LOG_ERR("Failed to allocate memory for DS3231 device");
         return NULL;
     }
 
-    dev->i2c_dev = device_get_binding(i2c_label);
-    if (!dev->i2c_dev) {
-        LOG_ERR("Failed to get I2C device: %s", i2c_label);
+    /* Use devicetree API for SDK 2.x */
+    dev->i2c_dev = DEVICE_DT_GET(DT_NODELABEL(i2c0));
+    if (!device_is_ready(dev->i2c_dev)) {
+        LOG_ERR("I2C device not ready");
         k_free(dev);
         return NULL;
     }
